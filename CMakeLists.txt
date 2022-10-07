@@ -9,6 +9,9 @@ set(QUAZIP_LIB_SOVERSION 1.3.0)
 option(BUILD_SHARED_LIBS "" ON)
 option(QUAZIP_INSTALL "" ON)
 option(QUAZIP_USE_QT_ZLIB "" OFF)
+# This options triggers FetchContent to download zlib sources from https://github.com/madler/zlib
+# FIXME installing quazip doesn't work when building zlib from source
+option(QUAZIP_FETCH_ZLIB_FROM_GIT "" OFF)
 option(QUAZIP_ENABLE_TESTS "Build QuaZip tests" OFF)
 
 # Set the default value of `${QUAZIP_QT_MAJOR_VERSION}`.
@@ -86,8 +89,20 @@ if(QUAZIP_USE_QT_ZLIB)
     endif()
 endif()
 if(NOT QUAZIP_QT_ZLIB_USED)
-    find_package(ZLIB REQUIRED)
-    set(QUAZIP_LIB_LIBRARIES ${QUAZIP_LIB_LIBRARIES} ZLIB::ZLIB)
+    if(QUAZIP_FETCH_ZLIB_FROM_GIT)
+        include(FetchContent)
+        FetchContent_Declare(
+                zlib
+                # Not using the original repository, because it would require to install ZLIB manually
+                GIT_REPOSITORY https://github.com/madler/zlib
+                GIT_TAG 21767c654d31d2dccdde4330529775c6c5fd5389
+        )
+        FetchContent_MakeAvailable(zlib)
+        set(QUAZIP_LIB_LIBRARIES ${QUAZIP_LIB_LIBRARIES} zlib)
+    else()
+        find_package(ZLIB REQUIRED)
+        set(QUAZIP_LIB_LIBRARIES ${QUAZIP_LIB_LIBRARIES} ZLIB::ZLIB)
+    endif()
 endif()
 
 add_subdirectory(quazip)
